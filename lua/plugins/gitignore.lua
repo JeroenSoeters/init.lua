@@ -1,0 +1,3 @@
+return {
+	"gisphm/vim-gitignore"
+}
