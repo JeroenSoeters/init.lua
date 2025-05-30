@@ -48,14 +48,3 @@ vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
 
 vim.keymap.set("n", "<leader><leader>", ":so<cr>")
 
--- custom mappings for java dev
-vim.keymap.set('n', '<Leader>tm', ':JavaTestRunCurrentMethod<cr>', { noremap = true, silent = true, desc = 'Run test method' })
-vim.keymap.set('n', '<Leader>tc', ':JavaTestRunCurrentClass<cr>', { noremap = true, silent = true, desc = 'Run test class' })
-vim.keymap.set('n', '<Leader>dm', ':JavaTestDebugCurrentMethod<cr>', { noremap = true, silent = true, desc = 'Debug test method' })
-vim.keymap.set('n', '<Leader>dc', ':JavaTestDebugCurrentClass<cr>', { noremap = true, silent = true, desc = 'Debug test class' })
-vim.keymap.set('n', '<Leader>tr', ':JavaTestViewLastReport<cr>', { noremap = true, desc = 'View last test report' })
-vim.keymap.set('n', '<Leader>b', ':DapToggleBreakpoint<cr>', { noremap = true, desc = 'Toggle breakpoint' })
-vim.keymap.set('n', '<C-o>', ':DapStepOver<cr>', { noremap = true, desc = 'Step over' })
-vim.keymap.set('n', '<C-i>', ':DapStepInto<cr>', { noremap = true, desc = 'Step into' })
-vim.keymap.set('n', '<Leader>c', ':DapContinue<cr>', { noremap = true, desc = 'Continue' })
-vim.api.nvim_set_keymap('v', '<C-e>', '<Cmd>lua require("dapui").eval()<CR>', {noremap = true})

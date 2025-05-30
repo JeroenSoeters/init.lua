@@ -2,8 +2,7 @@ return {
     "neovim/nvim-lspconfig",
     dependencies = {
         "stevearc/conform.nvim",
-        "williamboman/mason.nvim",
-        "williamboman/mason-lspconfig.nvim",
+        "williamboman/mason.nvim",  -- Keep mason but NOT mason-lspconfig
         "hrsh7th/cmp-nvim-lsp",
         "hrsh7th/cmp-buffer",
         "hrsh7th/cmp-path",
@@ -15,114 +14,130 @@ return {
     },
 
     config = function()
-        -- hack: nvim-java wants to be setup befor lsp
-        require("java").setup()
-
-
+        -- Setup conform
         require("conform").setup({
             formatters_by_ft = {
+                go = { "gofmt", "goimports" },
             }
         })
+
+        -- Setup completion
         local cmp = require('cmp')
         local cmp_lsp = require("cmp_nvim_lsp")
         local capabilities = vim.tbl_deep_extend(
             "force",
             {},
             vim.lsp.protocol.make_client_capabilities(),
-            cmp_lsp.default_capabilities())
+            cmp_lsp.default_capabilities()
+        )
 
+        -- Setup UI feedback
         require("fidget").setup({})
+
+        -- Setup Mason (only for installing programs)
         require("mason").setup()
-        require("mason-lspconfig").setup({
-            ensure_installed = {
-                "lua_ls",
-                "rust_analyzer",
-                "gopls",
-                "jdtls",
-            },
-            handlers = {
-                function(server_name) -- default handler (optional)
-                    require("lspconfig")[server_name].setup {
-                        capabilities = capabilities
-                    }
-                end,
 
-                zls = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.zls.setup({
-                        root_dir = lspconfig.util.root_pattern(".git", "build.zig", "zls.json"),
-                        settings = {
-                            zls = {
-                                enable_inlay_hints = true,
-                                enable_snippets = true,
-                                warn_style = true,
-                            },
-                        },
-                    })
-                    vim.g.zig_fmt_parse_errors = 0
-                    vim.g.zig_fmt_autosave = 0
+        -- Configure language servers
+        local lspconfig = require("lspconfig")
 
-                end,
-                ["lua_ls"] = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.lua_ls.setup {
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                runtime = { version = "Lua 5.1" },
-                                diagnostics = {
-                                    globals = { "bit", "vim", "it", "describe", "before_each", "after_each" },
-                                }
-                            }
-                        }
-                    }
-                end,
-                ["jdtls"] = function()
-                    local lspconfig = require('lspconfig')
-                    lspconfig.jdtls.setup({})
+        -- Setup common on_attach function
+        local on_attach = function(client, bufnr)
+            local opts = { buffer = bufnr, noremap = true, silent = true }
+
+            -- Define keymaps
+            vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+            vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+            vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+            vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+            vim.keymap.set('n', 'go', vim.lsp.buf.type_definition, opts)
+            vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+            vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, opts)
+            vim.keymap.set('n', '<F6>', vim.lsp.buf.rename, opts)
+            vim.keymap.set({'n', 'x'}, '<F3>', function() vim.lsp.buf.format({async = true}) end, opts)
+            vim.keymap.set('n', 'ga', vim.lsp.buf.code_action, opts)
+
+            -- Enable inlay hints safely
+            pcall(function()
+                if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
+                    if type(vim.lsp.inlay_hint) == "table" and vim.lsp.inlay_hint.enable then
+                        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+                    elseif type(vim.lsp.inlay_hint) == "function" then
+                        vim.lsp.inlay_hint(bufnr, true)
+                    end
                 end
+            end)
+        end
+
+        -- Set up servers manually (no mason-lspconfig)
+        -- Set up gopls
+        lspconfig.gopls.setup {
+            capabilities = capabilities,
+            on_attach = on_attach,
+            cmd = {"gopls"},
+            filetypes = {"go", "gomod", "gowork", "gotmpl"},
+            root_dir = lspconfig.util.root_pattern("go.work", "go.mod", ".git"),
+            settings = {
+                gopls = {
+                    analyses = {
+                        unusedparams = true,
+                        shadow = true,
+                    },
+                    staticcheck = true,
+                    buildFlags = {"-tags=unit,integration,e2e"},
+                    usePlaceholders = true,
+                    completeUnimported = true,
+                }
+            },
+        }
+
+        -- Set up lua_ls
+        lspconfig.lua_ls.setup {
+            capabilities = capabilities,
+            on_attach = on_attach,
+            settings = {
+                Lua = {
+                    runtime = { version = "LuaJIT" },
+                    diagnostics = {
+                        globals = { "vim", "bit", "it", "describe", "before_each", "after_each" },
+                    },
+                    workspace = {
+                        library = vim.api.nvim_get_runtime_file("", true),
+                        checkThirdParty = false,
+                    },
+                    telemetry = {
+                        enable = false,
+                    },
+                },
+            },
+        }
+
+        -- Set up rust_analyzer if installed
+        if vim.fn.executable('rust-analyzer') == 1 then
+            lspconfig.rust_analyzer.setup {
+                capabilities = capabilities,
+                on_attach = on_attach,
             }
-        })
+        end
+
+        -- A command to install LSP servers from Mason manually
+        vim.api.nvim_create_user_command("InstallLSP", function()
+            vim.cmd("MasonInstall lua-language-server rust-analyzer gopls")
+        end, {})
 
         -- Reserve a space in the gutter
         vim.opt.signcolumn = 'yes'
 
-        -- Add cmp_nvim_lsp capabilities settings to lspconfig
-        -- This should be executed before you configure any language server
-        local lspconfig_defaults = require('lspconfig').util.default_config
-        lspconfig_defaults.capabilities = vim.tbl_deep_extend(
-            'force',
-            lspconfig_defaults.capabilities,
-            require('cmp_nvim_lsp').default_capabilities()
-        )
-
-        -- This is where you enable features that only work
-        -- if there is a language server active in the file
-        vim.api.nvim_create_autocmd('LspAttach', {
-            desc = 'LSP actions',
-            callback = function(event)
-                local opts = {buffer = event.buf}
-
-                vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>', opts)
-                vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>', opts)
-                vim.keymap.set('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>', opts)
-                vim.keymap.set('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<cr>', opts)
-                vim.keymap.set('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>', opts)
-                vim.keymap.set('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>', opts)
-                vim.keymap.set('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>', opts)
-                vim.keymap.set('n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<cr>', opts)
-                vim.keymap.set({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>', opts)
-                vim.keymap.set('n', '<F4>', '<cmd>lua vim.lsp.buf.code_action()<cr>', opts)
-            end,
-        })
-
+        -- Set up completion
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
-
         cmp.setup({
             snippet = {
                 expand = function(args)
-                    require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+                    require('luasnip').lsp_expand(args.body)
                 end,
+            },
+            window = {
+                completion = cmp.config.window.bordered(),
+                documentation = cmp.config.window.bordered(),
             },
             mapping = cmp.mapping.preset.insert({
                 ['<C-k>'] = cmp.mapping.select_prev_item(cmp_select),
@@ -132,14 +147,18 @@ return {
             }),
             sources = cmp.config.sources({
                 { name = 'nvim_lsp' },
-                { name = 'luasnip' }, -- For luasnip users.
+                { name = 'luasnip' },
             }, {
                     { name = 'buffer' },
                 })
         })
 
+        -- Configure diagnostics appearance
         vim.diagnostic.config({
-            -- update_in_insert = true,
+            underline = true,
+            update_in_insert = false,
+            virtual_text = true,
+            severity_sort = true,
             float = {
                 focusable = false,
                 style = "minimal",

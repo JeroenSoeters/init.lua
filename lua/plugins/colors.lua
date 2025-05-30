@@ -1,30 +1,42 @@
 function ColorMyPencils(color)
-	color = color or "rose-pine-moon"
-	vim.cmd.colorscheme(color)
-
---	vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
---	vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+    color = color or "rose-pine" -- Default to rose-pine
+    vim.cmd.colorscheme(color)
 end
 
 return {
-
+    -- If you're not using Brightburn, you can remove this.
     {
         "erikbackman/brightburn.vim",
     },
+
+    -- Remove the duplicate Tokyonight entry.
+    -- If you want to use Tokyonight, configure it like this:
     {
         "folke/tokyonight.nvim",
-        lazy = false,
-        opts = {},
-        config = function()
-            ColorMyPencils()
-        end
+        lazy = false, -- Load at startup
+        opts = {
+            style = "storm",
+            transparent = true,
+            terminal_colors = true,
+            styles = {
+                comments = { italic = false },
+                keywords = { italic = false },
+                sidebars = "dark",
+                floats = "dark",
+            },
+        },
+        -- No `config` function just for ColorMyPencils.
+        -- If you wanted Tokyonight to be your default, you'd put
+        -- vim.cmd("colorscheme tokyonight") in an `init` block or main init.lua.
     },
+
+    -- If you're not using Gruvbox, you can remove this.
     {
         "ellisonleao/gruvbox.nvim",
-        name = "gruvbox",
+        name = "gruvbox", -- Important if the repo name doesn't match the colorscheme name
         config = function()
             require("gruvbox").setup({
-                terminal_colors = true, -- add neovim terminal colors
+                terminal_colors = true,
                 undercurl = true,
                 underline = false,
                 bold = true,
@@ -40,35 +52,15 @@ return {
                 invert_signs = false,
                 invert_tabline = false,
                 invert_intend_guides = false,
-                inverse = true, -- invert background for search, diffs, statuslines and errors
-                contrast = "", -- can be "hard", "soft" or empty string
+                inverse = true,
+                contrast = "",
                 palette_overrides = {},
                 overrides = {},
-                dim_inactive = false,
+                dim_inactive = false, -- Gruvbox also has this, good to keep.
                 transparent_mode = false,
             })
         end,
-    },
-    {
-        "folke/tokyonight.nvim",
-        config = function()
-            require("tokyonight").setup({
-                -- your configuration comes here
-                -- or leave it empty to use the default settings
-                style = "storm", -- The theme comes in three styles, `storm`, `moon`, a darker variant `night` and `day`
-                transparent = true, -- Enable this to disable setting the background color
-                terminal_colors = true, -- Configure the colors used when opening a `:terminal` in Neovim
-                styles = {
-                    -- Style to be applied to different syntax groups
-                    -- Value is any valid attr-list value for `:help nvim_set_hl`
-                    comments = { italic = false },
-                    keywords = { italic = false },
-                    -- Background styles. Can be "dark", "transparent" or "normal"
-                    sidebars = "dark", -- style for sidebars, see below
-                    floats = "dark", -- style for floating windows
-                },
-            })
-        end
+        -- No `init` here, as you're primarily aiming for rose-pine.
     },
 
     {
@@ -76,14 +68,45 @@ return {
         name = "rose-pine",
         config = function()
             require('rose-pine').setup({
+                variant = 'moon',
                 disable_background = true,
                 styles = {
                     italic = false,
                 },
+                dim_inactive = false,
             })
 
-            ColorMyPencils();
-        end
-    },
+            -- Set the colorscheme
+            vim.cmd("colorscheme rose-pine")
 
+            -- Set up the autocmd after colorscheme is loaded
+            vim.api.nvim_create_autocmd("ColorScheme", {
+                pattern = "*",
+                callback = function()
+                    vim.api.nvim_set_hl(0, "NormalNC", { link = "Normal" })
+                    -- Keep the dap-ui fixes
+                    vim.api.nvim_set_hl(0, "WinBar", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "WinBarNC", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "FloatBorder", { link = "Normal" })
+                    -- Make Telescope borders match
+                    vim.api.nvim_set_hl(0, "TelescopeBorder", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "TelescopePromptBorder", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { link = "Normal" })
+                    vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { link = "Normal" })
+                end,
+            })
+
+            -- Apply immediately
+            vim.api.nvim_set_hl(0, "NormalNC", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "WinBar", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "WinBarNC", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "FloatBorder", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "TelescopeBorder", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "TelescopePromptBorder", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { link = "Normal" })
+            vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { link = "Normal" })
+        end,
+    }
 }

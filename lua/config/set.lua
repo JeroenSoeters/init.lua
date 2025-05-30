@@ -7,7 +7,9 @@ vim.opt.guicursor = ""
 
 -- enable 24-bit colour
 vim.opt.termguicolors = true
-vim.cmd.colorscheme("rose-pine")
+-- vim.cmd.colorscheme("rose-pine")
+
+
 
 -- line numbers
 vim.wo.nu = true
@@ -40,10 +42,10 @@ vim.opt.isfname:append("@-@")
 
 vim.opt.updatetime = 50
 
-vim.opt.colorcolumn = "80"
+-- vim.opt.colorcolumn = "80"
 
 -- python3 executable
 vim.g.python3_host_prog="/usr/bin/python3"
 
-vim.opt.ttimeoutlen = 50 -- Reduce key code delay
-vim.opt.timeoutlen = 300 -- Reduce mapping delay
+-- vim.opt.ttimeoutlen = 50 -- Reduce key code delay
+-- vim.opt.timeoutlen = 300 -- Reduce mapping delay
