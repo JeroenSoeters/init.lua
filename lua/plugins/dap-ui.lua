@@ -50,6 +50,29 @@ return {
                 vim.keymap.set("n", "<leader>dB", function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "Debug: Set Conditional Breakpoint" })
                 vim.keymap.set("n", "<leader>dl", function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, { desc = "Debug: Set Log Point" })
                 vim.keymap.set("n", "<leader>dr", function() dap.repl.open() end, { desc = "Debug: Open REPL" })
+
+                vim.api.nvim_create_user_command('DebugAttachPid', function()
+                    dap.run({
+                        type = "go",
+                        name = "Attach to process",
+                        mode = "local",
+                        request = "attach",
+                        processId = function()
+                            local file = io.open("/tmp/formae.pid", "r")
+                            if file then
+                                local pid = file:read("*n")
+                                file:close()
+                                return pid
+                            else
+                                vim.notify("Could not open pidfile: /tmp/myprocess.pid", vim.log.levels.ERROR)
+                                return nil
+                            end
+                        end,
+                    })
+                end, { desc = "Debug: Attach to process from pidfile" })
+
+                -- Optional: Add a keymap for quick access
+                vim.keymap.set("n", "<leader>dn", ":DebugAttachPid<CR>", { desc = "Debug: Attach to PID from file" })
             end
         },
         "nvim-neotest/nvim-nio"

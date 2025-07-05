@@ -111,6 +111,17 @@ return {
             },
         }
 
+        lspconfig.golangci_lint_ls.setup {
+            capabilities = capabilities,
+            on_attach = on_attach,
+            cmd = { "golangci-lint-langserver" },
+            filetypes = { "go", "gomod" },
+            root_dir = lspconfig.util.root_pattern("go.work", "go.mod", ".git"),
+            init_options = {
+                command = { "golangci-lint", "run", "--output.json.path", "stdout", "--show-stats=false", "--issues-exit-code=1" },
+            },
+        }
+
         -- Set up rust_analyzer if installed
         if vim.fn.executable('rust-analyzer') == 1 then
             lspconfig.rust_analyzer.setup {
@@ -121,7 +132,7 @@ return {
 
         -- A command to install LSP servers from Mason manually
         vim.api.nvim_create_user_command("InstallLSP", function()
-            vim.cmd("MasonInstall lua-language-server rust-analyzer gopls")
+            vim.cmd("MasonInstall lua-language-server rust-analyzer gopls  golangci-lint-langserver")
         end, {})
 
         -- Reserve a space in the gutter
