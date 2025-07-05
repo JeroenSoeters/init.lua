@@ -4,6 +4,40 @@ return {
         { "mfussenegger/nvim-dap",
             config = function()
                 local dap = require("dap")
+                -- Configure Go adapter
+                dap.adapters.go = {
+                    type = "server",
+                    port = "${port}",
+                    executable = {
+                        command = "dlv",
+                        args = { "dap", "-l", "127.0.0.1:${port}" },
+                    },
+                }
+
+                -- Configure Go configurations
+                dap.configurations.go = {
+                    {
+                        type = "go",
+                        name = "Debug",
+                        request = "launch",
+                        program = "${file}",
+                    },
+                    {
+                        type = "go",
+                        name = "Debug test",
+                        request = "launch",
+                        mode = "test",
+                        program = "${file}",
+                    },
+                    {
+                        type = "go",
+                        name = "Debug test (go.mod)",
+                        request = "launch",
+                        mode = "test",
+                        program = "./${relativeFileDirname}",
+                    },
+                }
+
 
                 -- Define breakpoint signs with better icons
                 vim.fn.sign_define('DapBreakpoint', {
@@ -64,7 +98,7 @@ return {
                                 file:close()
                                 return pid
                             else
-                                vim.notify("Could not open pidfile: /tmp/myprocess.pid", vim.log.levels.ERROR)
+                                vim.notify("Could not open pidfile: /tmp/formae.pid", vim.log.levels.ERROR)
                                 return nil
                             end
                         end,
