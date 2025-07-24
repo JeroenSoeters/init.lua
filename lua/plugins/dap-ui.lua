@@ -84,6 +84,7 @@ return {
                 vim.keymap.set("n", "<leader>dB", function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "Debug: Set Conditional Breakpoint" })
                 vim.keymap.set("n", "<leader>dl", function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, { desc = "Debug: Set Log Point" })
                 vim.keymap.set("n", "<leader>dr", function() dap.repl.open() end, { desc = "Debug: Open REPL" })
+                vim.keymap.set("n", "<leader>dd", function() dap.disconnect() end, { desc = "Debug: Disconnect/Detach" })
 
                 vim.api.nvim_create_user_command('DebugAttachPid', function()
                     dap.run({
